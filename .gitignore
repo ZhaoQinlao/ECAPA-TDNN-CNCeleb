@@ -10,3 +10,11 @@ data/
 !model.py
 !ECAPAModel.py
 !tools.py
+
+.hypothesis/
+CN-Celeb
+exps/
+log.txt
+mycode/
+voxceleb
+voxceleb2

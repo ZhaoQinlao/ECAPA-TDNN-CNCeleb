@@ -15,10 +15,10 @@ from tools import *
 
 
 #################  你需要修改的一些路径  #################
-cn1_root = '/home2/database/sre/CN-Celeb-2022/task1/cn_1/'
-cn2_dev = '/home2/database/sre/CN-Celeb-2022/task1/cn_2/data'
-train_list_path = 'data/cn2_train_list.csv'
-trials_path = "data/trials.lst"
+cn1_root = 'CN-Celeb/CN-Celeb_flac'
+cn2_dev = 'CN-Celeb/CN-Celeb2_flac/data'
+train_list_path = 'CN-Celeb/CN-Celeb2_flac/train_lst.csv'
+trials_path = "CN-Celeb/CN-Celeb_flac/eval/lists/new_trials.lst"
 save_path = "exps/exp1"
 device = 'cuda:0'
 max_epoch = 80

@@ -22,7 +22,7 @@ class CNCeleb(Dataset):
             df = pd.read_csv(train_list)
             speaker_int_labels = []
             utt_paths = []
-            for (utt_path, label) in zip(df["utt_path"].values, df["speaker_int_label"].values):
+            for (utt_path, label) in zip(df["utt_paths"].values, df["utt_spk_int_labels"].values):
                 if utt_path[-4:] == 'flac':
                     utt_paths.append(utt_path)
                     speaker_int_labels.append(label)

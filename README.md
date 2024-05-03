@@ -17,6 +17,10 @@
 * CN-Celeb 2  [[点此下载]](http://openslr.org/82/)
 > CN-Celeb 原始数据是 flac 格式，考虑到转换格式又要占磁盘空间，就直接读取 flac 格式进行训练了。
 
+### 元数据准备
+* 用build_datalist.py生成train.csv
+* 数据集中提供的trial.lst以wav作为后缀，疑似存在问题，用dataset.py中的create_cnceleb_trails函数生成新的trial.lst
+
 ### 环境
 
 ```
@@ -44,4 +48,4 @@ pip install -r requirements.txt -i https://pypi.mirrors.ustc.edu.cn/simple/
 
 ## Acknowledge
 
-本项目基于 [TaoRuijie/ECAPA-TDNN](https://github.com/TaoRuijie/ECAPA-TDNN) 修改，并参考了 [Lantian Li/Sunine](https://gitlab.com/csltstu/sunine)。
+本项目基于 [PunkMale/ECAPA-TDNN-CNCeleb](https://github.com/PunkMale/ECAPA-TDNN-CNCeleb)和[TaoRuijie/ECAPA-TDNN](https://github.com/TaoRuijie/ECAPA-TDNN) 修改，并参考了 [Lantian Li/Sunine](https://gitlab.com/csltstu/sunine)。
