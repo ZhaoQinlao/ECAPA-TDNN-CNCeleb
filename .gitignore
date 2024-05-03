@@ -10,6 +10,7 @@ data/
 !model.py
 !ECAPAModel.py
 !tools.py
+!build_datalist.py
 
 .hypothesis/
 CN-Celeb
