@@ -1,5 +1,8 @@
 import os
 
+os.environ["TMPDIR"] = "gradio/tmp"
+os.makedirs(os.environ["TMPDIR"], exist_ok=True)
+
 import argparse
 import datetime
 import torch
@@ -10,8 +13,7 @@ from tools import init_args
 
 import gradio as gr
 
-os.environ["TMPDIR"] = "gradio/tmp"
-os.makedirs(os.environ["TMPDIR"], exist_ok=True)
+
 
 
 #################  你需要修改的一些路径  #################
