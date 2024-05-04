@@ -24,7 +24,7 @@
 ### 环境
 
 ```
-conda create -n cnceleb python=3.8.13 anaconda
+conda create -n cnceleb python
 conda activate cnceleb
 pip install -r requirements.txt -i https://pypi.mirrors.ustc.edu.cn/simple/
 ```
