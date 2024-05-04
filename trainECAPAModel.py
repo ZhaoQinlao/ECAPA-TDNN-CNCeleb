@@ -76,7 +76,7 @@ model_files.sort()
 ## 只进行测试，前提是有初始模型
 if args.eval:
     model = ECAPAModel(**vars(args))
-    model.load_state_dict(args.initial_model)
+    model.load_parameters(args.initial_model)
     print("Model {} 已加载!".format(args.initial_model))
     EER, minDCF = model.eval_network(eval_list=args.eval_list, eval_path=args.eval_path)
     print('EER:{:.4}  minDCF:{:.4}'.format(EER, minDCF))

@@ -19,3 +19,7 @@ log.txt
 mycode/
 voxceleb
 voxceleb2
+
+# Jupyter Notebook
+*.ipynb
+requirements_new.txt
