@@ -1,29 +1,15 @@
 #this is a modified version of the original ECAPA model
 
-import argparse
-import glob
-import datetime
 import torch
-import warnings
 
-from torch.utils.data import DataLoader
 import soundfile
 from ECAPAModel import ECAPAModel
-from dataset import CNCeleb
-from tools import *
 
-import torch
-import soundfile
-import sys
-import time
 
-import torch.nn as nn
+import librosa
+
 import torch.nn.functional as F
-from tqdm import tqdm
-from loss import AAMsoftmax
-from model import ECAPA_TDNN
-from tools import *
-from dataset import create_cnceleb_trails
+import numpy
 
 
 
@@ -40,7 +26,14 @@ class DemoModel(ECAPAModel):
             list[torch.Tensor]: embed1 and embed2
         '''
         self.eval()
-        audio, _ = soundfile.read(file)
+        print('embedding:', file)
+        audio, sr = soundfile.read(file)
+        if len(audio.shape) == 2: # multiple channels are present, transform to mono
+            audio = audio.mean(axis=1)
+        if sr != 16000: # resample to 16kHz
+            audio = librosa.resample(audio, orig_sr=sr, target_sr=16000)
+        print(audio.shape)
+        
         # Full utterance
         data_1 = torch.FloatTensor(numpy.stack([audio], axis=0)).to(self.device)
 
