@@ -46,6 +46,10 @@ pip install -r requirements.txt -i https://pypi.mirrors.ustc.edu.cn/simple/
 1. 在主程序中设置定义 `initial_model` 路径
 2. 运行`python trainECAPAModel.py --eval`
 
+## demo
+1. 下载预训练权重
+2. 使用命令`gradio demo_with_gradio.py`启动脚本，在浏览器中打开对应链接
+
 ## Acknowledge
 
 本项目基于 [PunkMale/ECAPA-TDNN-CNCeleb](https://github.com/PunkMale/ECAPA-TDNN-CNCeleb)和[TaoRuijie/ECAPA-TDNN](https://github.com/TaoRuijie/ECAPA-TDNN) 修改，并参考了 [Lantian Li/Sunine](https://gitlab.com/csltstu/sunine)。

@@ -63,7 +63,7 @@ class ECAPAModel(nn.Module):
         if not os.path.exists(eval_list):
             print('{} not exist!'.format(eval_list))
             create_cnceleb_trails(eval_path, eval_list)
-        lines = open(eval_list).read().splitlines()
+        lines = open(eval_list).read().splitlines() #enroll_file test_file
         for line in lines:
             files.append(line.split()[1])
             files.append(line.split()[2])

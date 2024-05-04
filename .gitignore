@@ -11,7 +11,10 @@ data/
 !ECAPAModel.py
 !tools.py
 !build_datalist.py
+!DemoModel.py
+!demo_with_gradio.py
 
+# directories
 .hypothesis/
 CN-Celeb
 exps/
@@ -19,7 +22,10 @@ log.txt
 mycode/
 voxceleb
 voxceleb2
+gradio
+flagged
 
 # Jupyter Notebook
 *.ipynb
 requirements_new.txt
+
