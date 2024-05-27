@@ -113,4 +113,4 @@ demo = gr.Interface(
     outputs=[gr.Textbox(label="Similarity Score"), gr.Textbox(label="Same Speaker")],
 )
 
-demo.launch(show_error=True,share=True)
+demo.launch(show_error=True)
