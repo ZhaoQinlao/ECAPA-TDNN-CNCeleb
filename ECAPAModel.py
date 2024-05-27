@@ -39,7 +39,7 @@ class ECAPAModel(nn.Module):
             progress.set_description("Epoch {}".format(epoch))
             self.zero_grad()
             labels = torch.LongTensor(labels).to(self.device)
-            speaker_embedding = self.speaker_encoder.forward(data.to(self.device), aug=True, backend=self.backend)
+            speaker_embedding = self.speaker_encoder.forward(data.to(self.device), aug=True)
             nloss, prec = self.speaker_loss.forward(speaker_embedding, labels)
             nloss.backward()
             self.optim.step()
@@ -90,9 +90,9 @@ class ECAPAModel(nn.Module):
             data_2 = torch.FloatTensor(feats).to(self.device)
             # Speaker embeddings
             with torch.no_grad():
-                embedding_1 = self.speaker_encoder.forward(data_1, aug=False, backend=self.backend)
+                embedding_1 = self.speaker_encoder.forward(data_1, aug=False)
                 embedding_1 = F.normalize(embedding_1, p=2, dim=1)
-                embedding_2 = self.speaker_encoder.forward(data_2, aug=False, backend=self.backend)
+                embedding_2 = self.speaker_encoder.forward(data_2, aug=False)
                 embedding_2 = F.normalize(embedding_2, p=2, dim=1)
             embeddings[file] = [embedding_1, embedding_2]
         scores, labels = [], []
