@@ -138,12 +138,15 @@ class FbankAug(nn.Module):
 
 class ECAPA_TDNN(nn.Module):
 
-    def __init__(self, C):
+    def __init__(self, C, backend, link_method):
         super(ECAPA_TDNN, self).__init__()
+
+        self.backend = backend
+        self.link_method = link_method
 
         self.torchfbank = torch.nn.Sequential(
             PreEmphasis(),
-            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160,f_min=20, f_max=7600, window_fn=torch.hamming_window, n_mels=80),)
+            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=20, f_max=7600, window_fn=torch.hamming_window, n_mels=80),)
 
         self.specaug = FbankAug()  # Spec augmentation
 
@@ -153,16 +156,32 @@ class ECAPA_TDNN(nn.Module):
         self.layer1 = Bottle2neck(C, C, kernel_size=3, dilation=2, scale=8)
         self.layer2 = Bottle2neck(C, C, kernel_size=3, dilation=3, scale=8)
         self.layer3 = Bottle2neck(C, C, kernel_size=3, dilation=4, scale=8)
+
+        if self.link_method == 'GRU':
+            self.gru1 = nn.GRU(input_size=C, hidden_size=C, num_layers=1, batch_first=False)
+            self.gru2 = nn.GRU(input_size=C, hidden_size=C, num_layers=1, batch_first=False)
+
         # I fixed the shape of the output from MFA layer, that is close to the setting from ECAPA paper.
         self.layer4 = nn.Conv1d(3 * C, 1536, kernel_size=1)
-        self.attention = nn.Sequential(
-            nn.Conv1d(4608, 256, kernel_size=1),
-            nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.Tanh(),  # I add this layer
-            nn.Conv1d(256, 1536, kernel_size=1),
-            nn.Softmax(dim=2),
-        )
+        # backend
+        if self.backend == 'ASP':
+            self.attention = nn.Sequential(
+                nn.Conv1d(4608, 256, kernel_size=1),
+                nn.ReLU(),
+                nn.BatchNorm1d(256),
+                nn.Tanh(),  # I add this layer
+                nn.Conv1d(256, 1536, kernel_size=1),
+                nn.Softmax(dim=2),
+            )
+        elif self.backend == 'Query':
+            raise NotImplementedError
+            self.query = nn.Parameter(torch.randn(1, 256, 1536))
+            self.key = nn.Conv1d(1536, 1536, kernel_size=1)
+            self.value = nn.Conv1d(1536, 1536, kernel_size=1)
+            raise NotImplementedError
+        else:
+            raise Exception('Backend name error, check your backend name')
+        
         self.bn5 = nn.BatchNorm1d(3072)
         self.fc6 = nn.Linear(3072, 192)
         self.bn6 = nn.BatchNorm1d(192)
@@ -179,19 +198,40 @@ class ECAPA_TDNN(nn.Module):
         x = self.relu(x)
         x = self.bn1(x)
 
-        x1 = self.layer1(x)
-        x2 = self.layer2(x + x1)
-        x3 = self.layer3(x + x1 + x2)
+        if self.link_method == 'Default':
+            x1 = self.layer1(x)
+            x2 = self.layer2(x1)
+            x3 = self.layer3(x2)
+        elif self.link_method == 'Summed':
+            x1 = self.layer1(x)
+            x2 = self.layer2(x + x1)
+            x3 = self.layer3(x + x1 + x2)
+        elif self.link_method == 'GRU':
+            x1 = self.layer1(x)
+            x2 = self.layer2(x1)
+            x3 = self.layer3(x2)
+
+            x1 = x1.permute(2, 0, 1)
+            x2 = x2.permute(2, 0, 1)
+            x1, _ = self.gru1(x1)
+            x2, _ = self.gru2(x2)
+            x1 = x1.permute(1, 2, 0)
+            x2 = x2.permute(1, 2, 0)
+        else:
+            raise Exception('link_method name error, check your link_method name')
 
         x = self.layer4(torch.cat((x1, x2, x3), dim=1))
         x = self.relu(x)
 
-        t = x.size()[-1]
+        t = x.size()[-1] # batch channel time
 
-        global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
-                              torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
+        if self.backend == 'ASP':
+            global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
+                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
 
-        w = self.attention(global_x)
+            w = self.attention(global_x)
+        elif self.backend == 'Query':
+            raise NotImplementedError
 
         mu = torch.sum(x * w, dim=2)
         sg = torch.sqrt((torch.sum((x ** 2) * w, dim=2) - mu ** 2).clamp(min=1e-4))

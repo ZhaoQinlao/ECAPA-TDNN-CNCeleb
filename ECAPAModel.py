@@ -13,11 +13,13 @@ from dataset import create_cnceleb_trails
 
 
 class ECAPAModel(nn.Module):
-    def __init__(self, lr, lr_decay, C, n_class, m, s, test_step, device, **kwargs):
+    def __init__(self, lr, lr_decay, C, n_class, m, s, test_step, device, backend, link_method, **kwargs):
         super(ECAPAModel, self).__init__()
         self.device = device
         ## ECAPA-TDNN
-        self.speaker_encoder = ECAPA_TDNN(C=C).to(self.device)
+        self.backend = backend
+        self.link_method = link_method
+        self.speaker_encoder = ECAPA_TDNN(C=C, backend=self.backend, link_method=self.link_method).to(self.device)
         ## Classifier
         self.speaker_loss = AAMsoftmax(n_class=n_class, m=m, s=s).to(self.device)
 
