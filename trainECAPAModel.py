@@ -35,7 +35,7 @@ def main():
     parser.add_argument('--backend', type=str, default='ASP', help='选择模型后端，ASP或Query')
 
     ## 设置主干连接方式
-    parser.add_argument('--link_method', type=str, default='Default', help='选择layer1、2、3、4的连接方式，Default/GRU/Summed')
+    parser.add_argument('--link_method', type=str, default='Summed', help='选择layer1、2、3、4的连接方式，Default/GRU/Summed')
 
     ## Training Settings
     parser.add_argument('--num_frames', type=int, default=200, help='输入语音长度，200帧为2秒')

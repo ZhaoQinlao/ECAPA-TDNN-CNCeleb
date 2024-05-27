@@ -280,14 +280,11 @@ class ECAPA_TDNN(nn.Module):
         x = self.relu(x)
 
         t = x.size()[-1] # batch channel time
-        t = x.size()[-1] # batch channel time
 
         if self.backend == 'ASP':
             global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
                                 torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
-        if self.backend == 'ASP':
-            global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
-                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
+
 
             w = self.attention(global_x)
             mu = torch.sum(x * w, dim=2)
