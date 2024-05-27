@@ -135,6 +135,126 @@ class FbankAug(nn.Module):
         x = self.mask_along_axis(x, dim=1)
         return x
 
+class Query(nn.Module):
+    def __init__(self, channels, embed_dim, num_heads, hidden_dim, num_layers=2):
+        super(Query, self).__init__()
+        print('Using backend Query')
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        
+        self.query = nn.Parameter(torch.randn(1, embed_dim, embed_dim))  # 调整 query 的维度
+        
+        self.linear_k = nn.Linear(channels, embed_dim)
+        self.linear_v = nn.Linear(channels, embed_dim)
+        
+        self.mha_layers = nn.ModuleList([
+            nn.MultiheadAttention(embed_dim, num_heads)
+            for _ in range(num_layers)
+        ])
+        
+        self.norm_layers = nn.ModuleList([
+            nn.LayerNorm(embed_dim)
+            for _ in range(num_layers)
+        ])
+        
+        self.ffn_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(embed_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, embed_dim),
+                nn.LayerNorm(embed_dim)
+            )
+            for _ in range(num_layers)
+        ])
+
+        self.output_layer = nn.Linear(embed_dim, 12)
+        
+    def forward(self, inputs):
+        # inputs: [batch_size, channels, time_steps]
+        batch_size = inputs.size(0)
+        
+        key = self.linear_k(inputs.permute(2, 0, 1))  # [time_steps, batch_size, embed_dim]
+        value = self.linear_v(inputs.permute(2, 0, 1))  # [time_steps, batch_size, embed_dim]
+        
+        query = self.query.repeat(batch_size, 1, 1)  # [batch_size, query_size, embed_dim]
+        query = query.permute(1, 0, 2)  # [query_size, batch_size, embed_dim]
+        
+        for mha, norm, ffn in zip(self.mha_layers, self.norm_layers, self.ffn_layers):
+            attn_output, _ = mha(query, key, value)  # [query_size, batch_size, embed_dim]
+            query = query + attn_output  # Residual connection
+            query = norm(query.permute(1, 0, 2))  # [batch_size, query_size, embed_dim]
+            query = query.permute(1, 0, 2)  # [query_size, batch_size, embed_dim]
+            query = ffn(query.permute(1, 2, 0)).permute(2, 0, 1)  # [query_size, batch_size, embed_dim]
+
+        output = self.output_layer(query.permute(1, 2, 0))  # [batch_size, 12, query_size]
+        output = output.view(batch_size, -1)
+        
+        return output
+        
+
+
+
+
+class Query(nn.Module):
+    def __init__(self, channels, embed_dim, num_heads, hidden_dim, num_layers=2):
+        super(Query, self).__init__()
+        print('Using backend Query')
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        
+        self.query = nn.Parameter(torch.randn(1, embed_dim, embed_dim))  # 调整 query 的维度
+        
+        self.linear_k = nn.Linear(channels, embed_dim)
+        self.linear_v = nn.Linear(channels, embed_dim)
+        
+        self.mha_layers = nn.ModuleList([
+            nn.MultiheadAttention(embed_dim, num_heads)
+            for _ in range(num_layers)
+        ])
+        
+        self.norm_layers = nn.ModuleList([
+            nn.LayerNorm(embed_dim)
+            for _ in range(num_layers)
+        ])
+        
+        self.ffn_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(embed_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Linear(hidden_dim, embed_dim),
+                nn.LayerNorm(embed_dim)
+            )
+            for _ in range(num_layers)
+        ])
+
+        self.output_layer = nn.Linear(embed_dim, 12)
+        
+    def forward(self, inputs):
+        # inputs: [batch_size, channels, time_steps]
+        batch_size = inputs.size(0)
+        
+        key = self.linear_k(inputs.permute(2, 0, 1))  # [time_steps, batch_size, embed_dim]
+        value = self.linear_v(inputs.permute(2, 0, 1))  # [time_steps, batch_size, embed_dim]
+        
+        query = self.query.repeat(batch_size, 1, 1)  # [batch_size, query_size, embed_dim]
+        query = query.permute(1, 0, 2)  # [query_size, batch_size, embed_dim]
+        
+        for mha, norm, ffn in zip(self.mha_layers, self.norm_layers, self.ffn_layers):
+            attn_output, _ = mha(query, key, value)  # [query_size, batch_size, embed_dim]
+            query = query + attn_output  # Residual connection
+            query = norm(query.permute(1, 0, 2))  # [batch_size, query_size, embed_dim]
+            query = query.permute(1, 0, 2)  # [query_size, batch_size, embed_dim]
+            query = ffn(query.permute(1, 2, 0)).permute(2, 0, 1)  # [query_size, batch_size, embed_dim]
+
+        output = self.output_layer(query.permute(1, 2, 0))  # [batch_size, 12, query_size]
+        output = output.view(batch_size, -1)
+        
+        return output
+        
+
+
+
+
 
 class ECAPA_TDNN(nn.Module):
 
@@ -174,10 +294,29 @@ class ECAPA_TDNN(nn.Module):
                 nn.Softmax(dim=2),
             )
         elif self.backend == 'Query':
+            self.query = Query(1536, 256, 8, 512, 2)
+
+                
+        elif self.backend == 'GRU':
             raise NotImplementedError
-            self.query = nn.Parameter(torch.randn(1, 256, 1536))
-            self.key = nn.Conv1d(1536, 1536, kernel_size=1)
-            self.value = nn.Conv1d(1536, 1536, kernel_size=1)
+        else:
+            raise Exception('Backend name error, check your backend name')
+        
+        # backend
+        if self.backend == 'ASP':
+            self.attention = nn.Sequential(
+                nn.Conv1d(4608, 256, kernel_size=1),
+                nn.ReLU(),
+                nn.BatchNorm1d(256),
+                nn.Tanh(),  # I add this layer
+                nn.Conv1d(256, 1536, kernel_size=1),
+                nn.Softmax(dim=2),
+            )
+        elif self.backend == 'Query':
+            self.query = Query(1536, 256, 8, 512, 2)
+
+                
+        elif self.backend == 'GRU':
             raise NotImplementedError
         else:
             raise Exception('Backend name error, check your backend name')
@@ -224,19 +363,24 @@ class ECAPA_TDNN(nn.Module):
         x = self.relu(x)
 
         t = x.size()[-1] # batch channel time
+        t = x.size()[-1] # batch channel time
 
+        if self.backend == 'ASP':
+            global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
+                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
         if self.backend == 'ASP':
             global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
                                 torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
 
             w = self.attention(global_x)
+            mu = torch.sum(x * w, dim=2)
+            sg = torch.sqrt((torch.sum((x ** 2) * w, dim=2) - mu ** 2).clamp(min=1e-4))
+            x = torch.cat((mu, sg), 1)
         elif self.backend == 'Query':
-            raise NotImplementedError
+            x = self.query(x)
 
-        mu = torch.sum(x * w, dim=2)
-        sg = torch.sqrt((torch.sum((x ** 2) * w, dim=2) - mu ** 2).clamp(min=1e-4))
+        
 
-        x = torch.cat((mu, sg), 1)
         x = self.bn5(x)
         x = self.fc6(x)
         x = self.bn6(x)
