@@ -17,8 +17,8 @@ from tools import *
 #################  你需要修改的一些路径  #################
 cn1_root = 'CN-Celeb/CN-Celeb_flac'
 cn2_dev = 'CN-Celeb/CN-Celeb2_flac/data'
-train_list_path = 'CN-Celeb/CN-Celeb2_flac/train_lst.csv'
-trials_path = "CN-Celeb/CN-Celeb_flac/eval/lists/new_trials.lst"
+train_list_path = 'CN-Celeb/CN-Celeb2_flac/train_lst.csv' # 要生成
+trials_path = "CN-Celeb/CN-Celeb_flac/eval/lists/new_trials.lst" # 要生成
 save_path = "exps/exp1"
 device = 'cuda:0'
 max_epoch = 80
@@ -28,6 +28,10 @@ initial_model = ''
 ######################################################
 
 parser = argparse.ArgumentParser(description="ECAPA_trainer")
+
+## 设置模型后端
+parser.add_argument('--backend', type=str, default='ASP',help='选择模型后端，ASP或GRU或Query')
+
 ## Training Settings
 parser.add_argument('--num_frames', type=int, default=200, help='输入语音长度，200帧为2秒')
 parser.add_argument('--max_epoch', type=int, default=max_epoch, help='训练多少个epoch')

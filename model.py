@@ -138,8 +138,10 @@ class FbankAug(nn.Module):
 
 class ECAPA_TDNN(nn.Module):
 
-    def __init__(self, C):
+    def __init__(self, C, backend):
         super(ECAPA_TDNN, self).__init__()
+
+        self.backend = backend
 
         self.torchfbank = torch.nn.Sequential(
             PreEmphasis(),
@@ -155,14 +157,29 @@ class ECAPA_TDNN(nn.Module):
         self.layer3 = Bottle2neck(C, C, kernel_size=3, dilation=4, scale=8)
         # I fixed the shape of the output from MFA layer, that is close to the setting from ECAPA paper.
         self.layer4 = nn.Conv1d(3 * C, 1536, kernel_size=1)
-        self.attention = nn.Sequential(
-            nn.Conv1d(4608, 256, kernel_size=1),
-            nn.ReLU(),
-            nn.BatchNorm1d(256),
-            nn.Tanh(),  # I add this layer
-            nn.Conv1d(256, 1536, kernel_size=1),
-            nn.Softmax(dim=2),
-        )
+        # backend
+        if self.backend == 'ASP':
+            self.attention = nn.Sequential(
+                nn.Conv1d(4608, 256, kernel_size=1),
+                nn.ReLU(),
+                nn.BatchNorm1d(256),
+                nn.Tanh(),  # I add this layer
+                nn.Conv1d(256, 1536, kernel_size=1),
+                nn.Softmax(dim=2),
+            )
+        elif self.backend == 'Query':
+            raise NotImplementedError
+            self.query = nn.Parameter(torch.randn(1, 256, 1536))
+            self.key = nn.Conv1d(1536, 1536, kernel_size=1)
+            self.value = nn.Conv1d(1536, 1536, kernel_size=1)
+            raise NotImplementedError
+
+                
+        elif self.backend == 'GRU':
+            raise NotImplementedError
+        else:
+            raise Exception('Backend name error, check your backend name')
+        
         self.bn5 = nn.BatchNorm1d(3072)
         self.fc6 = nn.Linear(3072, 192)
         self.bn6 = nn.BatchNorm1d(192)
@@ -186,12 +203,17 @@ class ECAPA_TDNN(nn.Module):
         x = self.layer4(torch.cat((x1, x2, x3), dim=1))
         x = self.relu(x)
 
-        t = x.size()[-1]
+        t = x.size()[-1] # batch channel time
 
-        global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
-                              torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
+        if self.backend == 'ASP':
+            global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
+                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
 
-        w = self.attention(global_x)
+            w = self.attention(global_x)
+        elif self.backend == 'Query':
+            raise NotImplementedError
+        elif self.backend == 'GRU':
+            raise NotImplementedError
 
         mu = torch.sum(x * w, dim=2)
         sg = torch.sqrt((torch.sum((x ** 2) * w, dim=2) - mu ** 2).clamp(min=1e-4))
