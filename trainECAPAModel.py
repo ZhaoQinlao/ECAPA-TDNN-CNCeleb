@@ -21,7 +21,7 @@ def main():
     cn2_dev = 'CN-Celeb/CN-Celeb2_flac/data'
     train_list_path = 'CN-Celeb/CN-Celeb2_flac/train_lst.csv'  # 要生成
     trials_path = "CN-Celeb/CN-Celeb_flac/eval/lists/new_trials.lst"  # 要生成
-    save_path = "exps/exp1"
+    save_path = "exps/dubug"
     device = 'cuda:0'
     max_epoch = 80
     batch_size = 64
@@ -32,10 +32,10 @@ def main():
     parser = argparse.ArgumentParser(description="ECAPA_trainer")
 
     ## 设置模型后端
-    parser.add_argument('--backend', type=str, default='ASP', help='选择模型后端，ASP或GRU或Query')
+    parser.add_argument('--backend', type=str, default='ASP', help='选择模型后端，ASP或Query')
 
     ## 设置主干连接方式
-    parser.add_argument('--link_method', type=str, default='GRU', help='选择layer1、2、3、4的连接方式')
+    parser.add_argument('--link_method', type=str, default='Summed', help='选择layer1、2、3、4的连接方式，Default/GRU/Summed')
 
     ## Training Settings
     parser.add_argument('--num_frames', type=int, default=200, help='输入语音长度，200帧为2秒')

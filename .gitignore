@@ -29,3 +29,7 @@ flagged
 *.ipynb
 requirements_new.txt
 
+#temp others
+awscliv2.zip
+aws
+data_list
