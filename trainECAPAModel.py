@@ -37,6 +37,10 @@ def main():
     ## 设置主干连接方式
     parser.add_argument('--link_method', type=str, default='Summed', help='选择layer1、2、3、4的连接方式，Default/GRU/Summed')
 
+    ## 设置主干部分使用的模型
+    parser.add_argument('--backbone', type=str, default='Res2BlockB',
+                        help='设置主干部分使用的模型，Res2Block/Res2BlockPCF/Res2BlockA')
+
     ## Training Settings
     parser.add_argument('--num_frames', type=int, default=200, help='输入语音长度，200帧为2秒')
     parser.add_argument('--max_epoch', type=int, default=max_epoch, help='训练多少个epoch')
