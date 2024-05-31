@@ -283,7 +283,7 @@ class ECAPA_TDNN(nn.Module):
 
         if self.backend == 'ASP':
             global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
-                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
+                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1) # [batch, 3*channel, t]
 
 
             w = self.attention(global_x)
