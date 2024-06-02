@@ -13,6 +13,8 @@ data/
 !build_datalist.py
 !DemoModel.py
 !demo_with_gradio.py
+!recognition.py
+!sparkanswer.py
 
 # directories
 .hypothesis/
