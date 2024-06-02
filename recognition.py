@@ -13,9 +13,9 @@ from time import mktime
 import hmac
 
 # 替换为你的科大讯飞 API 应用 ID、API Key 和 API Secret
-APP_ID = '43350a74'
-API_KEY = '07becc4453e4c61519995b0d01c41bf1'
-API_SECRET = 'MjM2MDUxNDdlYTY2OTk0ZTVmNWJlZmZk'
+APP_ID = 'xxxxxx'
+API_KEY = 'xxxxxx'
+API_SECRET = 'xxxxxx'
 
 def get_auth_url():
         url = 'wss://ws-api.xfyun.cn/v2/iat'
