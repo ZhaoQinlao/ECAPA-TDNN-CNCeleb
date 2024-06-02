@@ -309,7 +309,7 @@ class ECAPA_TDNN(nn.Module):
                 nn.Softmax(dim=2),
             )
         elif self.backend == 'Query':
-            self.query = Query(1536, 256, 8, 512, 2)
+            self.query = Query(channels=1536, embed_dim=256, num_heads=8, hidden_dim=512, num_layers=2)
         else:
             raise Exception('Backend name error, check your backend name')
 
