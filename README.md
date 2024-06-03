@@ -21,6 +21,16 @@
 * 用build_datalist.py生成train.csv
 * 数据集中提供的trial.lst以wav作为后缀，疑似存在问题，用dataset.py中的create_cnceleb_trails函数生成新的trial.lst
 
+### 数据增广
+* 下载rirs noises数据集 [[点此下载]](http://openslr.org/28/)
+* 下载musan数据集 [[点此下载]](http://openslr.org/17/)
+* 解压数据集到`augmented_data\`路径下
+* 使用dataprep.py对rirs noise进行预处理
+* 运行时添加`--augmentation`选项，如下
+```
+python trainECAPAModel.py --augmentation
+```
+
 ### 环境
 
 ```
@@ -41,6 +51,7 @@ pip install -r requirements.txt -i https://pypi.mirrors.ustc.edu.cn/simple/
 1. 在 `trainECAPAModel.py` 配置好对应路径
 2. 激活 conda 环境 `conda activate cnceleb`
 3. 运行 `python trainECAPAModel.py`
+4. 提供backend，link_method, backbone等多个选项，详情见help
 
 ## 测试
 1. 在主程序中设置定义 `initial_model` 路径

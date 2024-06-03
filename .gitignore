@@ -13,6 +13,7 @@ data/
 !build_datalist.py
 !DemoModel.py
 !demo_with_gradio.py
+!dataprep.py
 
 # directories
 .hypothesis/
@@ -24,6 +25,7 @@ voxceleb
 voxceleb2
 gradio
 flagged
+augmented_data
 
 # Jupyter Notebook
 *.ipynb
