@@ -21,6 +21,8 @@ def main():
     cn2_dev = 'CN-Celeb/CN-Celeb2_flac/data'
     train_list_path = 'CN-Celeb/CN-Celeb2_flac/train_lst.csv'  # 要生成
     trials_path = "CN-Celeb/CN-Celeb_flac/eval/lists/new_trials.lst"  # 要生成
+    musan_path = "augmented_data/musan_split"
+    rirs_path = "augmented_data/RIRS_NOISES/simulated_rirs"
     save_path = "exps/dubug"
     device = 'cuda:0'
     max_epoch = 80
@@ -38,8 +40,8 @@ def main():
     parser.add_argument('--link_method', type=str, default='Summed', help='选择layer1、2、3、4的连接方式，Default/GRU/Summed')
 
     ## 设置主干部分使用的模型
-    parser.add_argument('--backbone', type=str, default='Res2BlockB',
-                        help='设置主干部分使用的模型，Res2Block/Res2BlockPCF/Res2BlockA')
+    parser.add_argument('--backbone', type=str, default='Res2Block',
+                        help='设置主干部分使用的模型，Res2Block/Res2BlockB/Res2BlockA')
 
     ## Training Settings
     parser.add_argument('--num_frames', type=int, default=200, help='输入语音长度，200帧为2秒')
@@ -54,6 +56,8 @@ def main():
     ## 训练、测试路径、模型保存路径
     parser.add_argument('--train_list', type=str, default=train_list_path, help='训练列表')
     parser.add_argument('--train_path', type=str, default=cn2_dev, help='训练数据路径')
+    parser.add_argument('--musan_path', type=str, default=musan_path,help='The path to the MUSAN set')
+    parser.add_argument('--rir_path', type=str, default=rirs_path, help='The path to the RIR set')
     parser.add_argument('--eval_list', type=str, default=trials_path, help='测试trails')
     parser.add_argument('--eval_path', type=str, default=cn1_root, help='测试数据路径')
     parser.add_argument('--save_path', type=str, default=save_path, help='模型保存路径')
@@ -65,6 +69,7 @@ def main():
     parser.add_argument('--n_class', type=int, help='Number of speakers')
 
     ## 运行模式
+    parser.add_argument("--augmentation", dest='augmentation', action='store_true', help='是否进行数据增强') 
     parser.add_argument('--eval', dest='eval', action='store_true', help='训练还是测试')
     parser.add_argument('--resume', dest='resume', action='store_true', help='是否恢复之前的训练')
     parser.add_argument('--initial_model', type=str, default=initial_model, help='从哪个模型继续')

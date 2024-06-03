@@ -30,6 +30,17 @@ initial_model = ""
 ######################################################
 
 parser = argparse.ArgumentParser(description="ECAPA_trainer")
+
+## 设置模型后端
+parser.add_argument('--backend', type=str, default='ASP', help='选择模型后端，ASP或Query')
+
+## 设置主干连接方式
+parser.add_argument('--link_method', type=str, default='Summed', help='选择layer1、2、3、4的连接方式，Default/GRU/Summed')
+
+## 设置主干部分使用的模型
+parser.add_argument('--backbone', type=str, default='Res2Block',
+                    help='设置主干部分使用的模型，Res2Block/Res2BlockB/Res2BlockA')
+
 ## Training Settings
 parser.add_argument(
     "--num_frames", type=int, default=200, help="输入语音长度，200帧为2秒"

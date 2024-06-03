@@ -309,7 +309,7 @@ class ECAPA_TDNN(nn.Module):
                 nn.Softmax(dim=2),
             )
         elif self.backend == 'Query':
-            self.query = Query(1536, 256, 8, 512, 2)
+            self.query = Query(channels=1536, embed_dim=256, num_heads=8, hidden_dim=512, num_layers=2)
         else:
             raise Exception('Backend name error, check your backend name')
 
@@ -358,7 +358,7 @@ class ECAPA_TDNN(nn.Module):
 
         if self.backend == 'ASP':
             global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
-                                  torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1)
+                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1) # [batch, 3*channel, t]
 
             w = self.attention(global_x)
             mu = torch.sum(x * w, dim=2)

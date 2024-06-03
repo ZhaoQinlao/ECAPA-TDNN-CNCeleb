@@ -13,6 +13,9 @@ data/
 !build_datalist.py
 !DemoModel.py
 !demo_with_gradio.py
+!recognition.py
+!sparkanswer.py
+!dataprep.py
 
 # directories
 .hypothesis/
@@ -24,6 +27,7 @@ voxceleb
 voxceleb2
 gradio
 flagged
+augmented_data
 
 # Jupyter Notebook
 *.ipynb
@@ -33,3 +37,4 @@ requirements_new.txt
 awscliv2.zip
 aws
 data_list
+.vscode/settings.json
