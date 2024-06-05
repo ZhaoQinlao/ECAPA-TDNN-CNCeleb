@@ -16,10 +16,11 @@ import glob
 
 
 class CNCeleb(Dataset):
-    def __init__(self, train_list, train_path, num_frames, augmentation, musan_path,rir_path, **kwargs):
+    def __init__(self, train_list, train_path, num_frames, augmentation, eval, musan_path,rir_path, **kwargs):
         self.train_path = train_path
         self.num_frames = num_frames
         self.augmentation = augmentation
+        self.eval = eval
         if os.path.exists(train_list):
             print('load {}'.format(train_list))
             df = pd.read_csv(train_list)
@@ -78,7 +79,7 @@ class CNCeleb(Dataset):
         audio = audio[start_frame:start_frame + length]
         audio = np.stack([audio], axis=0)
         # Data Augmentation
-        if self.augmentation:
+        if self.augmentation and not self.eval:
             augtype = random.randint(0,5)
             if augtype == 0:   # Original
                 audio = audio
