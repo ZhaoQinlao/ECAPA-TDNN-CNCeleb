@@ -32,6 +32,64 @@ class SEModule(nn.Module):
         return input * x
 
 
+class SelfAttentionBranch(nn.Module):
+    def __init__(self, C, num_heads, dropout=0.1):
+        super(SelfAttentionBranch, self).__init__()
+
+        # self.Wq = nn.Linear(C, C)
+        # self.Wk = nn.Linear(C, C)
+        # self.Wv = nn.Linear(C, C)
+
+        self.Wq = nn.Conv1d(C, C, kernel_size=1)
+        self.Wk = nn.Conv1d(C, C, kernel_size=1)
+        self.Wv = nn.Conv1d(C, C, kernel_size=1)
+
+        self.layer_norm = nn.LayerNorm(C)
+        self.self_attention = nn.MultiheadAttention(C, num_heads, dropout=dropout)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        # x.shape: [batch_size, feature_dimension, sequence_length]
+        # 转换为 [batch_size, sequence_length, feature_dimension] 适应LayerNorm
+        x = x.permute(0, 2, 1)
+        x = self.layer_norm(x)
+        # 转换为 [batch_size, feature_dimension, sequence_length] 适应Conv1d
+        x = x.permute(0, 2, 1)
+
+        q = self.Wq(x)
+        k = self.Wk(x)
+        v = self.Wv(x)
+        # 转换为 [sequence_length, batch_size, feature_dimension]
+        q = q.permute(2, 0, 1)
+        k = k.permute(2, 0, 1)
+        v = v.permute(2, 0, 1)
+        attn_output, _ = self.self_attention(q, k, v)
+        attn_output = self.dropout(attn_output)
+
+        # 转换回 [batch_size, feature_dimension, sequence_length]
+        attn_output = attn_output.permute(1, 2, 0)
+
+        return attn_output
+
+
+class DepthWiseConvAndSE(nn.Module):
+    def __init__(self, C):  # C大多数情况输入为1024
+        super(DepthWiseConvAndSE, self).__init__()
+        self.dw_conv = nn.Conv1d(2 * C, 2 * C, kernel_size=3, groups=2 * C, padding=1)
+        self.fc = nn.Linear(2 * C, C)
+        self.se_block = SEModule(2 * C)
+
+    def forward(self, Y_A, Y_R):
+        Y_C = torch.cat((Y_A, Y_R), dim=1)  # Y_A, Y_R维度均为[64, 1024, 202]，输出Y_C维度为[64, 2048, 202]
+        Y_D = self.dw_conv(Y_C)  # 输出Y_D维度为[64, 2048, 202]
+        Y_D = self.se_block(Y_D)  # 输出Y_D维度为[64, 2048, 202]
+        Y_C = Y_C.permute(0, 2, 1)
+        Y_D = Y_D.permute(0, 2, 1)
+        Y_Merge = self.fc(Y_C + Y_D)
+        Y_Merge = Y_Merge.permute(0, 2, 1)
+        return Y_Merge
+
+
 class Bottle2neck(nn.Module):
 
     def __init__(self, inplanes, planes, kernel_size=None, dilation=None, scale=8):
@@ -145,6 +203,75 @@ class Bottle2neckB(nn.Module):
         out = self.bn3(out)
 
         out = self.se(out)
+        out += residual
+        return out
+
+
+class Bottle2neckA(nn.Module):  # 很多重复，怕改了会崩，就直接复制粘贴了，欸嘿
+
+    def __init__(self, inplanes, planes, kernel_size1=None, kernel_size2=None, dilation=None, scale=8):
+        super(Bottle2neckA, self).__init__()
+        width = int(math.floor(planes / scale))
+        self.conv1 = nn.Conv1d(inplanes, width * scale, kernel_size=1)
+        self.bn1 = nn.BatchNorm1d(width * scale)
+        self.nums = scale - 1
+        conv3s = []
+        conv1s = []
+        bn3s = []
+        bn1s = []
+        num_pad1 = math.floor(kernel_size1 / 2) * dilation
+        num_pad2 = math.floor(kernel_size2 / 2) * dilation
+        for i in range(self.nums):
+            conv3s.append(nn.Conv1d(width, width, kernel_size=kernel_size1, dilation=dilation, padding=num_pad1))
+            conv1s.append(nn.Conv1d(width, width, kernel_size=kernel_size2, dilation=dilation, padding=num_pad2))
+            bn3s.append(nn.BatchNorm1d(width))
+            bn1s.append(nn.BatchNorm1d(width))
+        self.conv3s = nn.ModuleList(conv3s)
+        self.conv1s = nn.ModuleList(conv1s)
+        self.bn3s = nn.ModuleList(bn3s)
+        self.bn1s = nn.ModuleList(bn1s)
+        self.conv3 = nn.Conv1d(width * scale, planes, kernel_size=1)
+        self.bn3 = nn.BatchNorm1d(planes)
+        self.relu = nn.ReLU()
+        self.width = width
+        self.se = SEModule(planes)
+        self.attention_branch = SelfAttentionBranch(C=inplanes, num_heads=8, dropout=0.1)
+        self.merge = DepthWiseConvAndSE(planes)
+
+    def forward(self, x):
+        residual = x
+        out_R = self.conv1(x)
+        out_R = self.relu(out_R)
+        out_R = self.bn1(out_R)
+
+        spx = torch.split(out_R, self.width, 1)
+        for i in range(self.nums):
+            if i == 0:
+                sp3 = spx[i]
+                sp1 = spx[i]
+            else:
+                sp3 = sp3 + spx[i]
+                sp1 = sp1 + spx[i]
+            sp3 = self.conv3s[i](sp3)
+            sp1 = self.conv1s[i](sp1)
+            sp3 = self.relu(sp3)
+            sp1 = self.relu(sp1)
+            sp3 = self.bn3s[i](sp3)
+            sp1 = self.bn1s[i](sp1)
+            if i == 0:
+                out_R = sp3 + sp1
+            else:
+                out_R = torch.cat((out_R, sp3 + sp1), 1)
+
+        out_R = torch.cat((out_R, spx[self.nums]), 1)
+
+        out_R = self.conv3(out_R)
+        out_R = self.relu(out_R)
+        out_R = self.bn3(out_R)
+
+        out_R = self.se(out_R)
+        out_A = self.attention_branch(x)
+        out = self.merge(out_A, out_R)
         out += residual
         return out
 
@@ -287,7 +414,9 @@ class ECAPA_TDNN(nn.Module):
             self.layer2 = Bottle2neckB(C, C, kernel_size1=3, kernel_size2=1, dilation=3, scale=8)
             self.layer3 = Bottle2neckB(C, C, kernel_size1=3, kernel_size2=1, dilation=4, scale=8)
         elif self.backbone == 'Res2BlockA':
-            pass
+            self.layer1 = Bottle2neckA(C, C, kernel_size1=3, kernel_size2=1, dilation=2, scale=8)
+            self.layer2 = Bottle2neckA(C, C, kernel_size1=3, kernel_size2=1, dilation=3, scale=8)
+            self.layer3 = Bottle2neckA(C, C, kernel_size1=3, kernel_size2=1, dilation=4, scale=8)
         else:
             raise Exception('Backbone name error, check your backbone name')
 
@@ -370,5 +499,6 @@ class ECAPA_TDNN(nn.Module):
         x = self.bn5(x)
         x = self.fc6(x)
         x = self.bn6(x)
+        print(x.shape)
 
         return x
