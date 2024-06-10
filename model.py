@@ -499,6 +499,6 @@ class ECAPA_TDNN(nn.Module):
         x = self.bn5(x)
         x = self.fc6(x)
         x = self.bn6(x)
-        print(x.shape)
+        #print(x.shape)
 
         return x
