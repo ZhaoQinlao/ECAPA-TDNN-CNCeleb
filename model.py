@@ -36,16 +36,18 @@ class SelfAttentionBranch(nn.Module):
     def __init__(self, C, num_heads, dropout=0.1):
         super(SelfAttentionBranch, self).__init__()
 
+        E = C // 8
+        self.layer_norm = nn.LayerNorm(C)
+
         # self.Wq = nn.Linear(C, C)
         # self.Wk = nn.Linear(C, C)
         # self.Wv = nn.Linear(C, C)
+        self.Wq = nn.Conv1d(C, E, kernel_size=1)
+        self.Wk = nn.Conv1d(C, E, kernel_size=1)
+        self.Wv = nn.Conv1d(C, E, kernel_size=1)
 
-        self.Wq = nn.Conv1d(C, C, kernel_size=1)
-        self.Wk = nn.Conv1d(C, C, kernel_size=1)
-        self.Wv = nn.Conv1d(C, C, kernel_size=1)
-
-        self.layer_norm = nn.LayerNorm(C)
-        self.self_attention = nn.MultiheadAttention(C, num_heads, dropout=dropout)
+        self.self_attention = nn.MultiheadAttention(E, num_heads, dropout=dropout)
+        self.Wo = nn.Conv1d(E, C, kernel_size=1)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
@@ -64,11 +66,13 @@ class SelfAttentionBranch(nn.Module):
         k = k.permute(2, 0, 1)
         v = v.permute(2, 0, 1)
         attn_output, _ = self.self_attention(q, k, v)
-        attn_output = self.dropout(attn_output)
-
         # 转换回 [batch_size, feature_dimension, sequence_length]
         attn_output = attn_output.permute(1, 2, 0)
+        attn_output = self.Wo(attn_output)
+        # attn_output = attn_output.permute(2, 0, 1)
+        attn_output = self.dropout(attn_output)
 
+        # attn_output = attn_output.permute(1, 2, 0)
         return attn_output
 
 
@@ -487,7 +491,8 @@ class ECAPA_TDNN(nn.Module):
 
         if self.backend == 'ASP':
             global_x = torch.cat((x, torch.mean(x, dim=2, keepdim=True).repeat(1, 1, t),
-                                torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)), dim=1) # [batch, 3*channel, t]
+                                  torch.sqrt(torch.var(x, dim=2, keepdim=True).clamp(min=1e-4)).repeat(1, 1, t)),
+                                 dim=1)  # [batch, 3*channel, t]
 
             w = self.attention(global_x)
             mu = torch.sum(x * w, dim=2)
@@ -499,6 +504,5 @@ class ECAPA_TDNN(nn.Module):
         x = self.bn5(x)
         x = self.fc6(x)
         x = self.bn6(x)
-        print(x.shape)
 
         return x
