@@ -69,10 +69,8 @@ class SelfAttentionBranch(nn.Module):
         # 转换回 [batch_size, feature_dimension, sequence_length]
         attn_output = attn_output.permute(1, 2, 0)
         attn_output = self.Wo(attn_output)
-        # attn_output = attn_output.permute(2, 0, 1)
         attn_output = self.dropout(attn_output)
 
-        # attn_output = attn_output.permute(1, 2, 0)
         return attn_output
 
 
