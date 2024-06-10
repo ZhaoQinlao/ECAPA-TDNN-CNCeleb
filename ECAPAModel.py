@@ -10,6 +10,7 @@ from loss import AAMsoftmax
 from model import ECAPA_TDNN
 from tools import *
 from dataset import create_cnceleb_trails
+import os
 
 
 class ECAPAModel(nn.Module):
@@ -58,7 +59,7 @@ class ECAPAModel(nn.Module):
         progress.close()
         return loss / num, lr, int(100 * correct / index)
 
-    def eval_network(self, eval_list, eval_path):
+    def eval_network(self, eval_list, eval_path, score_dirname=None):
         self.eval()
         print('start eval...')
         files = []
@@ -111,10 +112,13 @@ class ECAPAModel(nn.Module):
             scores.append(score)
             labels.append(int(line.split()[0]))
 
+
         # Coumpute EER and minDCF
-        EER = tuneThresholdfromScore(scores, labels, [1, 0.1])[1]
+        
+        tunedThreshold, EER, fpr, fnr = tuneThresholdfromScore(scores, labels, [1, 0.1])
         fnrs, fprs, thresholds = ComputeErrorRates(scores, labels)
         minDCF, _ = ComputeMinDcf(fnrs, fprs, thresholds, 0.05, 1, 1)
+
 
         return EER, minDCF
 
