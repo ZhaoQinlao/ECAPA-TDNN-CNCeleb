@@ -70,7 +70,7 @@ class SelfAttentionBranch(nn.Module):
         attn_output = attn_output.permute(1, 2, 0)
         attn_output = self.Wo(attn_output)
         attn_output = self.dropout(attn_output)
-
+        # 更新一下
         return attn_output
 
 
