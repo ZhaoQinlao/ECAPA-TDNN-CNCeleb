@@ -78,7 +78,7 @@ class ECAPAModel(nn.Module):
         print('extract embedding:')
         max_length = 30 * 16080
 
-        for idx, file in tqdm(enumerate(setfiles[690:]), total=len(setfiles), mininterval=2, ncols=90):
+        for idx, file in tqdm(enumerate(setfiles), total=len(setfiles), mininterval=2, ncols=90):
             audio, _ = soundfile.read(file)
 
             # Truncate if necessary
