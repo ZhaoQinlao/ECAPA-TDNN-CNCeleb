@@ -31,6 +31,9 @@ initial_model = ""
 
 parser = argparse.ArgumentParser(description="ECAPA_trainer")
 
+## 设置特征提取器
+parser.add_argument('--feature_extractor', type=str, default='Fbank', help='选择特征提取器，Fbank或wavlm')
+
 ## 设置模型后端
 parser.add_argument('--backend', type=str, default='ASP', help='选择模型后端，ASP或Query')
 
@@ -89,7 +92,8 @@ args = init_args(args)
 ##---------------------------demo 从这里开始---------------------------------##
 
 ## demo用参数
-args.initial_model = "exps/exp1/model/epoch_64_acc_88.pth" # 这里放预训练的模型
+args.initial_model = "exps/augmentation/model/epoch_79_acc_66.pth" # 这里放预训练的模型
+tuned_threshold = 0.17997022
 args.n_class = 1996  # 与训练用的cn-celeb2 speaker数量一致
 
 
@@ -101,7 +105,7 @@ if gr.NO_RELOAD:  # 该部分仅初始化一次
     model.eval()
 
 
-def detect_same_speaker(embed_file, eval_file, threshold=0.5):
+def detect_same_speaker(embed_file, eval_file, threshold=tuned_threshold):
     """
     Detects if the two audio files are from the same speaker
     Args:
