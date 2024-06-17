@@ -14,14 +14,14 @@ import os
 
 
 class ECAPAModel(nn.Module):
-    def __init__(self, lr, lr_decay, C, n_class, m, s, test_step, device, backend, link_method, backbone, **kwargs):
+    def __init__(self, lr, lr_decay, C, n_class, m, s, test_step, device, backend, link_method, backbone, feature_extractor, **kwargs):
         super(ECAPAModel, self).__init__()
         self.device = device
         ## ECAPA-TDNN
         self.backend = backend
         self.link_method = link_method
         self.backbone = backbone
-        self.speaker_encoder = ECAPA_TDNN(C=C, backend=self.backend, link_method=self.link_method, backbone=self.backbone).to(self.device)
+        self.speaker_encoder = ECAPA_TDNN(C=C, backend=self.backend, link_method=self.link_method, backbone=self.backbone, feature_extractor=feature_extractor).to(self.device)
         ## Classifier
         self.speaker_loss = AAMsoftmax(n_class=n_class, m=m, s=s).to(self.device)
 

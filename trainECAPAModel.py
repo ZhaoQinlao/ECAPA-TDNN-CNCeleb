@@ -34,6 +34,9 @@ def main():
 
     parser = argparse.ArgumentParser(description="ECAPA_trainer")
 
+    ## 设置特征提取器
+    parser.add_argument('--feature_extractor', type=str, default='Fbank', help='选择特征提取器，Fbank或wavlm')
+
     ## 设置模型后端
     parser.add_argument('--backend', type=str, default='ASP', help='选择模型后端，ASP或Query')
 

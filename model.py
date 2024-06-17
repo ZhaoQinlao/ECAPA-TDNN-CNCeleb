@@ -6,6 +6,9 @@ This model is modified and combined based on the following three projects:
   3. https://github.com/speechbrain/speechbrain/blob/96077e9a1afff89d3f5ff47cab4bca0202770e4f/speechbrain/lobes/models/ECAPA_TDNN.py
 
 '''
+import os
+os.environ['HF_ENDPOINT'] = "https://hf-mirror.com"
+
 
 import math
 import torch
@@ -13,6 +16,7 @@ import torchaudio
 
 import torch.nn as nn
 import torch.nn.functional as F
+from transformers import WavLMModel
 
 
 class SEModule(nn.Module):
@@ -389,23 +393,41 @@ class Query(nn.Module):
 
 class ECAPA_TDNN(nn.Module):
 
-    def __init__(self, C, backend, link_method, backbone):
+    def __init__(self, C, feature_extractor, backend, link_method, backbone):
         super(ECAPA_TDNN, self).__init__()
 
+        self.feature_extractor = feature_extractor
         self.backend = backend
         self.link_method = link_method
         self.backbone = backbone
 
-        self.torchfbank = torch.nn.Sequential(
-            PreEmphasis(),
-            torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=20,
-                                                 f_max=7600, window_fn=torch.hamming_window, n_mels=80), )
+        if self.feature_extractor == 'Fbank':
+            self.torchfbank = torch.nn.Sequential(
+                PreEmphasis(),
+                torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=20,
+                                                    f_max=7600, window_fn=torch.hamming_window, n_mels=80), )
 
-        self.specaug = FbankAug()  # Spec augmentation
+            self.specaug = FbankAug()  # Spec augmentation
 
-        self.conv1 = nn.Conv1d(80, C, kernel_size=5, stride=1, padding=2)
+            self.conv1 = nn.Conv1d(80, C, kernel_size=5, stride=1, padding=2)
+           
+        # 两个训练阶段：1）wavlm frozon 2）wavlm learning
+        elif self.feature_extractor in ['wavlm1','wavlm2']:
+            self.wavlm = WavLMModel.from_pretrained("patrickvonplaten/wavlm-libri-clean-100h-base-plus")
+            self.conv1 = nn.Conv1d(768, C, kernel_size=5, stride=1, padding=2)
+            if self.feature_extractor == 'wavlm1':
+                for name, layer in self.named_parameters():
+                    if 'original' not in name:
+                        layer.requires_grad_(False)
+                
+                
+                
+        else:
+            raise Exception('Feature extractor name error, check your backbone name')
+
         self.relu = nn.ReLU()
         self.bn1 = nn.BatchNorm1d(C)
+
 
         if self.backbone == 'Res2Block':
             self.layer1 = Bottle2neck(C, C, kernel_size=3, dilation=2, scale=8)
@@ -449,12 +471,20 @@ class ECAPA_TDNN(nn.Module):
         self.bn6 = nn.BatchNorm1d(192)
 
     def forward(self, x, aug):
-        with torch.no_grad():
-            x = self.torchfbank(x) + 1e-6
-            x = x.log()
-            x = x - torch.mean(x, dim=-1, keepdim=True)
-            if aug == True:
-                x = self.specaug(x)
+        if self.feature_extractor == 'Fbank':
+            with torch.no_grad():
+                x = self.torchfbank(x) + 1e-6
+                x = x.log()
+                x = x - torch.mean(x, dim=-1, keepdim=True)
+                if aug == True:
+                    x = self.specaug(x)
+        elif self.feature_extractor == 'wavlm1':
+            x = self.wavlm(x).last_hidden_state.permute(0,2,1)
+            
+            
+        elif self.feature_extractor == 'wavlm2':
+            x = self.wavlm(x).last_hidden_state.permute(0,2,1)
+
 
         x = self.conv1(x)
         x = self.relu(x)
