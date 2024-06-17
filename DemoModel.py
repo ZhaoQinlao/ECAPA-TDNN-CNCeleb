@@ -34,6 +34,10 @@ class DemoModel(ECAPAModel):
             audio = librosa.resample(audio, orig_sr=sr, target_sr=16000)
         print(audio.shape)
         
+        max_length = 30 * 16080
+        # Truncate if necessary
+        if len(audio) > max_length:
+            audio = audio[:max_length]
         # Full utterance
         data_1 = torch.FloatTensor(numpy.stack([audio], axis=0)).to(self.device)
 

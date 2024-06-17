@@ -291,7 +291,7 @@ class PreEmphasis(torch.nn.Module):
             'flipped_filter', torch.FloatTensor([-self.coef, 1.]).unsqueeze(0).unsqueeze(0)
         )
 
-    def forward(self, input: torch.tensor) -> torch.tensor:
+    def forward(self, input: torch.Tensor) -> torch.Tensor:
         input = input.unsqueeze(1)
         input = F.pad(input, (1, 0), 'reflect')
         return F.conv1d(input, self.flipped_filter).squeeze(1)
@@ -408,18 +408,20 @@ class ECAPA_TDNN(nn.Module):
                                                     f_max=7600, window_fn=torch.hamming_window, n_mels=80), )
 
             self.specaug = FbankAug()  # Spec augmentation
-
             self.conv1 = nn.Conv1d(80, C, kernel_size=5, stride=1, padding=2)
+
+        elif self.feature_extractor == 'MFCC':
+            self.mfcc = torchaudio.transforms.MFCC(sample_rate=16000,n_mfcc=80)
+            raise NotImplemented
            
         # 两个训练阶段：1）wavlm frozon 2）wavlm learning
         elif self.feature_extractor in ['wavlm1','wavlm2']:
             self.wavlm = WavLMModel.from_pretrained("patrickvonplaten/wavlm-libri-clean-100h-base-plus")
-            self.conv1 = nn.Conv1d(768, C, kernel_size=5, stride=1, padding=2)
             if self.feature_extractor == 'wavlm1':
                 for name, layer in self.named_parameters():
                     if 'original' not in name:
                         layer.requires_grad_(False)
-                
+            self.conv1 = nn.Conv1d(768, C, kernel_size=5, stride=1, padding=2)
                 
                 
         else:
