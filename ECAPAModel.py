@@ -5,6 +5,7 @@ import time
 
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.cuda.amp import autocast
 from tqdm import tqdm
 from loss import AAMsoftmax
 from model import ECAPA_TDNN
@@ -75,8 +76,15 @@ class ECAPAModel(nn.Module):
         setfiles.sort()
 
         print('extract embedding:')
-        for idx, file in tqdm(enumerate(setfiles), total=len(setfiles), mininterval=2, ncols=90):
+        max_length = 30 * 16080
+
+        for idx, file in tqdm(enumerate(setfiles[690:]), total=len(setfiles), mininterval=2, ncols=90):
             audio, _ = soundfile.read(file)
+
+            # Truncate if necessary
+            if len(audio) > max_length:
+                audio = audio[:max_length]
+
             # Full utterance
             data_1 = torch.FloatTensor(numpy.stack([audio], axis=0)).to(self.device)
 
