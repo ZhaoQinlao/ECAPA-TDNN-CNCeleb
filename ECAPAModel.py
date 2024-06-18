@@ -126,6 +126,7 @@ class ECAPAModel(nn.Module):
         tunedThreshold, EER, fpr, fnr = tuneThresholdfromScore(scores, labels, [1, 0.1])
         fnrs, fprs, thresholds = ComputeErrorRates(scores, labels)
         minDCF, _ = ComputeMinDcf(fnrs, fprs, thresholds, 0.05, 1, 1)
+        print(f'thresholds:{tunedThreshold}')
 
 
         return EER, minDCF

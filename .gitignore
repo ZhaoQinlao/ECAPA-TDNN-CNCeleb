@@ -40,3 +40,5 @@ data_list
 .vscode/settings.json
 .vscode/launch.json
 logger.txt
+test_data/
+.gitignore
