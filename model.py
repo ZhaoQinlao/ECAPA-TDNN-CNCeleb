@@ -412,6 +412,10 @@ class ECAPA_TDNN(nn.Module):
 
         elif self.feature_extractor == 'WPMFCC':
             self.conv1 = nn.Conv1d(80, C, kernel_size=5, stride=1, padding=2)
+
+        elif self.feature_extractor == 'MFCC':
+            self.torchfbank = torchaudio.transforms.MFCC(sample_rate=16000, n_mfcc=80, dct_type=2, norm='ortho')
+            self.conv1 = nn.Conv1d(80, C, kernel_size=5, stride=1, padding=2)
            
         # 两个训练阶段：1）wavlm frozon 2）wavlm learning
         elif self.feature_extractor in ['wavlm1','wavlm2']:
@@ -479,15 +483,19 @@ class ECAPA_TDNN(nn.Module):
                 x = x - torch.mean(x, dim=-1, keepdim=True)
                 if aug == True:
                     x = self.specaug(x)
-        elif self.feature_extractor == 'wavlm1':
-            x = self.wavlm(x).last_hidden_state.permute(0,2,1)
-            
-            
-        elif self.feature_extractor == 'wavlm2':
-            x = self.wavlm(x).last_hidden_state.permute(0,2,1)
+
+        elif self.feature_extractor == 'MFCC':
+            x = self.torchfbank(x)
 
         elif self.feature_extractor == 'WPMFCC':
             x = x.permute(0,2,1)
+
+        elif self.feature_extractor == 'wavlm1':
+            x = self.wavlm(x).last_hidden_state.permute(0,2,1)
+        elif self.feature_extractor == 'wavlm2':
+            x = self.wavlm(x).last_hidden_state.permute(0,2,1)
+
+
 
         x = self.conv1(x)
         x = self.relu(x)

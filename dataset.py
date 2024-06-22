@@ -95,8 +95,8 @@ class CNCeleb(Dataset):
                 audio = self.add_noise(audio, 'speech')
                 audio = self.add_noise(audio, 'music')
 
-        # MFCC
-        if self.feature_extractor == 'MFCC':
+        # WPMFCC
+        if self.feature_extractor == 'WPMFCC':
             audio = WPMFCC(audio, 16000, 80, 400, 160, 3, 'db7', 512, 80)
             #audio = WPMFCC(audio[0], 16000, 12, 400, 200, 3, 'db7')
 
@@ -191,7 +191,7 @@ def test():
     musan_path = "augmented_data/musan_split"
     rirs_path = "augmented_data/RIRS_NOISES/simulated_rirs"
     train_list_path = 'augmented_data/cn2_train_list.csv'
-    dataset = CNCeleb(train_list_path, cn1_root, 200, False, 'MFCC', musan_path, rirs_path)
+    dataset = CNCeleb(train_list_path, cn1_root, 200, False, 'Fbank', musan_path, rirs_path)
     loader = DataLoader(dataset, batch_size=5, shuffle=True)
     for idx, batch in enumerate(loader):
         data, label = batch
