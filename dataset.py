@@ -13,14 +13,15 @@ from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
 from scipy import signal
 import glob
+from WPMFCC import WPMFCC
 
 
 class CNCeleb(Dataset):
-    def __init__(self, train_list, train_path, num_frames, augmentation, eval, musan_path,rir_path, **kwargs):
+    def __init__(self, train_list, train_path, num_frames, augmentation, feature_extractor, musan_path,rir_path, **kwargs):
         self.train_path = train_path
         self.num_frames = num_frames
         self.augmentation = augmentation
-        self.eval = eval
+        self.feature_extractor = feature_extractor
         if os.path.exists(train_list):
             print('load {}'.format(train_list))
             df = pd.read_csv(train_list)
@@ -77,9 +78,8 @@ class CNCeleb(Dataset):
             audio = np.pad(audio, (0, shortage), 'wrap')
         start_frame = np.int64(random.random() * (audio.shape[0] - length))
         audio = audio[start_frame:start_frame + length]
-        audio = np.stack([audio], axis=0)
         # Data Augmentation
-        if self.augmentation and not self.eval:
+        if self.augmentation:
             augtype = random.randint(0,5)
             if augtype == 0:   # Original
                 audio = audio
@@ -94,7 +94,13 @@ class CNCeleb(Dataset):
             elif augtype == 5: # Television noise
                 audio = self.add_noise(audio, 'speech')
                 audio = self.add_noise(audio, 'music')
-        return torch.FloatTensor(audio[0]), self.data_label[index]
+
+        # MFCC
+        if self.feature_extractor == 'MFCC':
+            audio = WPMFCC(audio, 16000, 80, 400, 160, 3, 'db7', 512, 80)
+            #audio = WPMFCC(audio[0], 16000, 12, 400, 200, 3, 'db7')
+
+        return torch.FloatTensor(audio), self.data_label[index]
 
     def __len__(self):
         return len(self.data_list)
@@ -185,7 +191,7 @@ def test():
     musan_path = "augmented_data/musan_split"
     rirs_path = "augmented_data/RIRS_NOISES/simulated_rirs"
     train_list_path = 'augmented_data/cn2_train_list.csv'
-    dataset = CNCeleb(train_list_path, cn1_root, 200, musan_path, rirs_path)
+    dataset = CNCeleb(train_list_path, cn1_root, 200, False, 'MFCC', musan_path, rirs_path)
     loader = DataLoader(dataset, batch_size=5, shuffle=True)
     for idx, batch in enumerate(loader):
         data, label = batch

@@ -16,6 +16,7 @@ data/
 !recognition.py
 !sparkanswer.py
 !dataprep.py
+!WPMFCC.py
 
 # directories
 .hypothesis/
