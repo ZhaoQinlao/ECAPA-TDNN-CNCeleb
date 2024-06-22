@@ -79,6 +79,7 @@ parser.add_argument(
 parser.add_argument(
     "--initial_model", type=str, default=initial_model, help="从哪个模型继续"
 )
+parser.add_argument('--other_dataset', dest='other_dataset', action='store_true', help='在其他数据集微调')
 
 train_start_time = datetime.datetime.now()
 ## 初始化、设置模型和打分文件保存路径
@@ -92,9 +93,13 @@ args = init_args(args)
 ##---------------------------demo 从这里开始---------------------------------##
 
 ## demo用参数
-args.initial_model = "exps/augmentation/model/epoch_79_acc_66.pth" # 这里放预训练的模型
-tuned_threshold = 0.17997022
-args.n_class = 1996  # 与训练用的cn-celeb2 speaker数量一致
+# args.initial_model = "exps/augmentation/model/epoch_79_acc_66.pth" # 这里放预训练的模型
+# tuned_threshold = 0.17997022
+# args.n_class = 1996  # 与训练用的cn-celeb2 speaker数量一致
+
+args.initial_model = "exps/StarRail/model/epoch_40_acc_92.pth" # 这里放预训练的模型
+tuned_threshold = 0.1676453
+args.n_class = 50  # 与训练用的cn-celeb2 speaker数量一致
 
 
 ## load the model
@@ -123,7 +128,7 @@ demo = gr.Interface(
     inputs=[
         gr.Audio(type="filepath", label="Embed File"),
         gr.Audio(type="filepath", label="Eval File"),
-        gr.Slider(minimum=-1, maximum=1, value=0.5, label="Threshold"),
+        gr.Slider(minimum=-1, maximum=1, value=tuned_threshold, label="Threshold"),
     ],
     outputs=[gr.Textbox(label="Similarity Score"), gr.Textbox(label="Same Speaker")],
 )

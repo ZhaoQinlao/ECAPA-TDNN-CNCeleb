@@ -77,6 +77,7 @@ def main():
     parser.add_argument('--eval', dest='eval', action='store_true', help='训练还是测试')
     parser.add_argument('--resume', dest='resume', action='store_true', help='是否恢复之前的训练')
     parser.add_argument('--initial_model', type=str, default=initial_model, help='从哪个模型继续')
+    parser.add_argument('--other_dataset', dest='other_dataset', action='store_true', help='在其他数据集微调')
 
     train_start_time = datetime.datetime.now()
     ## 初始化、设置模型和打分文件保存路径
@@ -111,6 +112,8 @@ def main():
         model = ECAPAModel(**vars(args))
         epoch = model.load_parameters(args.initial_model)
         print("Model {} 已加载!".format(args.initial_model))
+        if args.other_dataset:
+            model.changeLoss(args.n_class)
     ## 系统从头开始训练
     else:
         model = ECAPAModel(**vars(args))

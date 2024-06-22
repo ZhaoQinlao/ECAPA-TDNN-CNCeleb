@@ -24,7 +24,10 @@ class ECAPAModel(nn.Module):
         self.backbone = backbone
         self.speaker_encoder = ECAPA_TDNN(C=C, backend=self.backend, link_method=self.link_method, backbone=self.backbone, feature_extractor=feature_extractor).to(self.device)
         ## Classifier
-        self.speaker_loss = AAMsoftmax(n_class=n_class, m=m, s=s).to(self.device)
+        if kwargs['other_dataset']:
+            self.speaker_loss = AAMsoftmax(n_class=1996, m=m, s=s).to(self.device)
+        else:
+            self.speaker_loss = AAMsoftmax(n_class=n_class, m=m, s=s).to(self.device)
 
         self.optim = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=2e-5)
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, step_size=test_step, gamma=lr_decay)
@@ -143,3 +146,9 @@ class ECAPAModel(nn.Module):
         epoch = checkpoint['epoch']
         print('{} loaded!'.format(path))
         return epoch+1
+    
+    def changeLoss(self, n_class):
+        origin_m = self.speaker_loss.m
+        origin_s = self.speaker_loss.s
+        self.speaker_loss = AAMsoftmax(n_class=n_class, m=origin_m, s=origin_s).to(self.device)
+        print('ChangeLoss for other dataset')
