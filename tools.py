@@ -8,6 +8,8 @@ import os
 from operator import itemgetter
 
 from sklearn import metrics
+from collections import defaultdict
+import pickle as pkl
 
 
 # 设置打分文件和模型保存路径
@@ -104,3 +106,50 @@ def accuracy(output, target, topk=(1,)):
         res.append(correct_k.mul_(100.0 / batch_size))
 
     return res
+
+
+def record_revue_score(scores, labels, lines, threshold):
+    def _get_id_revue(line):
+        test_file = line.split(' ')[-1]
+        basename = test_file.split('/')[-1]
+        revue = basename.split('-')[1]
+        id = basename.split('-')[0]
+        return id, revue
+    
+    ids = []
+    revues = []
+    results = []
+    for line in lines:
+        id, revue = _get_id_revue(line)
+        revues.append(revue)
+        ids.append(id)
+
+    for score, label in zip(scores, labels):
+        results.append(int(score-threshold>0) == label)
+
+    with open('mycode/test.pkl','wb') as f:
+        pkl.dump((ids,revues,results),f)
+
+    # 以id为分组的准确率
+    id_groups = defaultdict(list)
+    for id_, result in zip(ids, results):
+        id_groups[id_].append(result)
+
+    id_accuracy = {}
+    for id_, result_list in id_groups.items():
+        accuracy = sum(result_list) / len(result_list)
+        id_accuracy[id_] = accuracy
+
+    # 以revues为分组的准确率
+    revue_groups = defaultdict(list)
+    for revue, result in zip(revues, results):
+        revue_groups[revue].append(result)
+
+    revue_accuracy = {}
+    for revue, result_list in revue_groups.items():
+        accuracy = sum(result_list) / len(result_list)
+        revue_accuracy[revue] = accuracy
+        
+    with open('mycode/ids_revues.pkl','wb') as f:
+        pkl.dump((id_accuracy,revue_accuracy),f)
+    

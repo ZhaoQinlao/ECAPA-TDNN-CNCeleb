@@ -130,6 +130,7 @@ class ECAPAModel(nn.Module):
         fnrs, fprs, thresholds = ComputeErrorRates(scores, labels)
         minDCF, _ = ComputeMinDcf(fnrs, fprs, thresholds, 0.05, 1, 1)
         print(f'thresholds:{tunedThreshold}')
+        #record_revue_score(scores, labels, lines, threshold=tunedThreshold[-1][0])
 
 
         return EER, minDCF
