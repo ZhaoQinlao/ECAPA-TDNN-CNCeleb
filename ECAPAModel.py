@@ -61,7 +61,7 @@ class ECAPAModel(nn.Module):
             )
 
         progress.close()
-        return loss / num, lr, int(100 * correct / index)
+        return loss / num, lr, float(100 * correct / index)
 
     def eval_network(self, eval_list, eval_path, score_dirname=None):
         self.eval()

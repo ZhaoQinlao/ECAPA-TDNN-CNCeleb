@@ -98,13 +98,13 @@ def main():
     ## 只进行测试，前提是有初始模型
     if args.eval:
         score_dirname = os.path.dirname(args.initial_model)
-        eval_score = open(os.path.join(score_dirname,'eval_score.txt'), 'w')
         model = ECAPAModel(**vars(args))
         model.load_parameters(args.initial_model)
         print("Model {} 已加载!".format(args.initial_model))
-        EER, minDCF = model.eval_network(eval_list=args.eval_list, eval_path=args.eval_path, score_dirname=score_dirname)
+        EER, minDCF = model.eval_network(eval_list=args.eval_list, eval_path=args.eval_path, score_dirname=None)
         print('EER:{:.4}  minDCF:{:.4}'.format(EER, minDCF))
-        eval_score.write('epoch:{} EER:{:.4} minDCF:{:.4}\n'.format(0, EER, minDCF))
+        with open(os.path.join(score_dirname,'eval_score.txt'), 'at') as eval_score:
+            eval_score.write('model:{} EER:{} minDCF:{}\n'.format(os.path.basename(args.initial_model), EER, minDCF))
         quit()
 
     ## 如果初始模型存在，系统将从初始模型开始训练
@@ -126,7 +126,7 @@ def main():
         epoch_start_time = datetime.datetime.now()
         ## 训练模型
         loss, lr, acc = model.train_network(epoch=epoch, loader=trainLoader)
-        model.save_parameters(os.path.join(args.model_save_path, 'epoch_{}_acc_{}.pth'.format(epoch, acc)), epoch)
+        model.save_parameters(os.path.join(args.model_save_path, 'epoch_{}_acc_{:.2f}.pth'.format(epoch, acc)), epoch)
 
         # 评估模型
         if epoch % eval_step == 0:

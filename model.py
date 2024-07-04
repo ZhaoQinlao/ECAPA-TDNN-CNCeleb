@@ -389,6 +389,61 @@ class Query(nn.Module):
         output = output.view(batch_size, -1)
 
         return output
+    
+class Query2(nn.Module):
+    def __init__(self, channels, query_dim, embed_dim, num_heads, hidden_dim, num_layers=2):
+        super().__init__()
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        
+        self.query = nn.Parameter(torch.randn(1, query_dim, embed_dim))  # 调整 query 的维度
+        
+        self.linear_k = nn.Linear(channels, embed_dim)
+        self.linear_v = nn.Linear(channels, embed_dim)
+        
+        self.mha_layers = nn.ModuleList([
+            nn.MultiheadAttention(embed_dim, num_heads)
+            for _ in range(num_layers)
+        ])
+        
+        self.norm_layers = nn.ModuleList([
+            nn.LayerNorm(embed_dim)
+            for _ in range(num_layers)
+        ])
+        
+        self.ffn_layers = nn.ModuleList([
+            nn.Sequential(
+                nn.Linear(embed_dim, hidden_dim),
+                nn.GELU(),
+                nn.Linear(hidden_dim, embed_dim),
+                nn.LayerNorm(embed_dim)
+            )
+            for _ in range(num_layers)
+        ])
+
+        self.output_layer = nn.Linear(query_dim, 12)
+        
+    def forward(self, inputs):
+        # inputs: [batch_size, channels, time_steps]
+        batch_size = inputs.size(0)
+        
+        key = self.linear_k(inputs.permute(2, 0, 1))  # [time_steps, batch_size, embed_dim]
+        value = self.linear_v(inputs.permute(2, 0, 1))  # [time_steps, batch_size, embed_dim]
+        
+        query = self.query.repeat(batch_size, 1, 1)  # [batch_size, query_size, embed_dim]
+        query = query.permute(1, 0, 2)  # [query_size, batch_size, embed_dim]
+        
+        for mha, norm, ffn in zip(self.mha_layers, self.norm_layers, self.ffn_layers):
+            attn_output, _ = mha(query, key, value)  # [query_size, batch_size, embed_dim]
+            query = query + attn_output  # Residual connection
+            query = norm(query.permute(1, 0, 2))  # [batch_size, query_size, embed_dim]
+            query = query.permute(1, 0, 2)  # [query_size, batch_size, embed_dim]
+            query = query + ffn(query.permute(1,0,2)).permute(1, 0, 2)  # [query_size, batch_size, embed_dim]
+
+        output = self.output_layer(query.permute(1, 2, 0))  # [batch_size, 12, query_size]
+        output = output.view(batch_size, -1)
+        
+        return output
 
 
 class ECAPA_TDNN(nn.Module):
@@ -468,6 +523,8 @@ class ECAPA_TDNN(nn.Module):
             )
         elif self.backend == 'Query':
             self.query = Query(channels=1536, embed_dim=256, num_heads=8, hidden_dim=512, num_layers=2)
+        elif self.backend == 'Query2':
+            self.query = Query2(channels=1536, query_dim=16, embed_dim=256, num_heads=8, hidden_dim=512, num_layers=2)
         else:
             raise Exception('Backend name error, check your backend name')
 
@@ -538,6 +595,8 @@ class ECAPA_TDNN(nn.Module):
             sg = torch.sqrt((torch.sum((x ** 2) * w, dim=2) - mu ** 2).clamp(min=1e-4))
             x = torch.cat((mu, sg), 1)
         elif self.backend == 'Query':
+            x = self.query(x)
+        elif self.backend == 'Query2':
             x = self.query(x)
 
         x = self.bn5(x)
