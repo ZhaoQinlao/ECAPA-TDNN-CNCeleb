@@ -72,3 +72,13 @@ class DemoModel(ECAPAModel):
         score = (score_1 + score_2) / 2
         score = score.detach().cpu().numpy()
         return score
+
+    def compare_with_embeddings(self, embeddings1, embeddings2):
+        embedding_11, embedding_12 = embeddings1
+        embedding_21, embedding_22 = embeddings2
+        # Compute the scores
+        score_1 = torch.mean(torch.matmul(embedding_11, embedding_21.T))  # higher is positive
+        score_2 = torch.mean(torch.matmul(embedding_12, embedding_22.T))
+        score = (score_1 + score_2) / 2
+        score = score.detach().cpu().numpy()
+        return score
