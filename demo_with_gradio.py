@@ -122,6 +122,12 @@ def detect_same_speaker(embed_file, eval_file, threshold=tuned_threshold):
     score = model.compare(embed_file, eval_file)
     return float(score), score > threshold
 
+def get_embeddings(file):
+    return model.embed(file)
+
+def detect_same_speaker_with_embeddings(embeddings1,embeddings2): 
+    score = model.compare_with_embeddings(embeddings1, embeddings2)
+    return float(score)
 
 demo = gr.Interface(
     fn=detect_same_speaker,

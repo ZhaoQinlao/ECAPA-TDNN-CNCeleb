@@ -1,0 +1,185 @@
+@charset "utf-8";
+
+#embed_file{
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+}
+#eval_file{
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+}
+#tijiao{
+    width: 90px;
+    height: 40px;
+    background-color: #1e83cb;
+    color: #fff;
+    border: none;
+    font-size: 20px;
+    border-radius: 6px;
+}
+.fl{
+    float: left;
+}
+.left{
+    width: 510px;
+    margin-right: 20px;
+}
+.right{
+    width: 510px;
+}
+.page{
+    width: 1060px;
+    height: 680px;
+    margin: 0 auto;
+    background-color: rgba(255, 255, 255, 0.7);
+    overflow: hidden;
+    border-radius: 10px;
+}
+.mid{
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    padding-bottom: 50px;
+    overflow: hidden;
+    min-height: 100%;
+    position: relative;
+}
+table{
+    width: 500px;
+    height: 350px;
+    margin: auto;
+    font-size: 15px;
+}
+body{
+    background: url(声优广播3.png) repeat-x;
+    background-size: cover;
+    background-attachment: fixed;
+    height: 100%;
+}
+p.title{
+    width: 100%;
+    line-height: 38px;
+    text-indent: 1em;
+    background-color: #53a3b9;
+    color: #fff;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+.results{
+    font-size: 20px;
+}
+td{
+    text-align: center;
+}
+.left_table{
+    height: 200px;
+    overflow-y: auto;
+}
+.right_table{
+    height: 150px;
+    overflow-y: auto;
+}
+#username{
+    height: 35px;
+    font-size: 18px;
+}
+.login_list{
+    border: 1px solid #ccc;
+}
+#login_btn{
+    cursor: pointer;
+    padding: 5px 10px;
+    background: #FFF;
+    color: #1e83cb;
+    border: solid 1px #1e83cb;
+    border-radius: 5px;
+    height: 40px;
+    width: 140px;
+    font-size: 20px;
+}
+#compare_btn{
+    cursor: pointer;
+    padding: 5px 10px;
+    background: #FFF;
+    color: #1e83cb;
+    border: solid 1px #1e83cb;
+    border-radius: 5px;
+    height: 40px;
+    width: 140px;
+    font-size: 20px;
+}
+#recordBtn{
+    cursor: pointer;
+    padding: 5px 10px;
+    background: #FFF;
+    color: #1e83cb;
+    border: solid 1px #1e83cb;
+    border-radius: 5px;
+    height: 35px;
+    width: 90px;
+    font-size: 17px;
+
+}
+.user_name{
+    font-size: 20px;
+}
+#login_file{
+    font-size: 17px;
+}
+#compare_file{
+    font-size: 17px;
+}
+/*设置加载动画的样式*/
+.loadingbg {
+    text-align: center;
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    align-items: center;
+}
+.loadingbg .loadingbox{
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    width: 200px;
+    height: 140px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+/*设置各竖条的共有样式*/
+.animbox > div {
+    background-color: #279fcf;
+    width: 4px;
+    height: 35px;
+    border-radius: 2px;
+    margin: 2px;
+    animation-fill-mode: both;
+    display: inline-block;
+    animation: anim 0.9s 0s infinite cubic-bezier(.11, .49, .38, .78);
+}
+/*设置动画延迟*/
+.animbox > :nth-child(2), .animbox > :nth-child(4) {
+    animation-delay: 0.25s !important;
+}
+
+.animbox > :nth-child(1), .animbox > :nth-child(5) {
+    animation-delay: 0.5s !important;
+}
+/*定义动画*/
+@keyframes anim {
+    0% {  transform: scaley(1); }
+    80% {  transform: scaley(0.3); }
+    90% {  transform: scaley(1);   }
+}

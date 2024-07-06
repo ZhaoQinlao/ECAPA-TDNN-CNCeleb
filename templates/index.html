@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename = 'style.css') }}">
+    <title>声纹对比</title>
+</head>
+<body>
+    <div class="loadingbg" style="display: none;" id="loading">
+        <div class="loadingbox">
+            <div class="animbox">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <p class="loadingtxt">正在解析中...</p>
+        </div>
+    </div>
+    <div class="page">
+        <div class="mid">
+            <h1>基于 ECAPA-TDNN 的声纹识别对比系统</h1>
+            <div class="left fl">
+                <p class="title">语音注册</p>
+                <form action="{{url_for('login')}}" method="post" enctype="multipart/form-data" id="loginform">
+                    <table class="left_table">
+                        <tr>
+                            <td>
+                                <label for="embed_file">
+                                    <input type="button" id="login_btn" value="选择注册音频"><span id="login_file"></span>
+                                    <input type="file" name="embed_file" id="embed_file" onchange="login_audio_play()">
+                                </label>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button type="button" id="recordBtn" onclick="record_as_file(0)">开始录音</button>
+                                <span id="recordStatus">未录音</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <audio id="login_audio" controls>你的浏览器不能支持HTML5音频</audio>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="user_name">用户名:<input type="text" name="username" id="username" placeholder="请输入用户名"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="submit" value="注册" id="tijiao">
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+                <div>
+                    <p class="results">注册列表:</p>
+                    <ol class="login_list">
+                        {% for user_name, embed_file_name in names %} <!-- django模板显示注册列表 -->
+                            <li>{{ user_name }} - {{ embed_file_name }}</li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+            <div class="right fl">
+                <p class="title">语音对比</p>
+                <form action="{{url_for('compare')}}" method="post" enctype="multipart/form-data" id="compareform">
+                <table class="right_table">
+                    <tr>
+                        <td>
+                            <label for="eval_file">
+                                <input type="button" id="compare_btn" value="选择对比音频"><span id="compare_file"></span>
+                                <input type="file" name="eval_file" id="eval_file" onchange="compare_audio_play()">
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <button type="button" id="recordBtn" onclick="record_as_file(1)">开始录音</button>
+                            <span id="recordStatus">未录音</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <audio id="compare_audio" controls>你的浏览器不能支持HTML5音频</audio>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><input type="submit" value="提交" id="tijiao"></td>
+                    </tr>
+                </table>
+                </form>
+                <div class="results">
+                    <p>对比音频：{{ eval_file_name }}</p>
+                    <p>说话人身份：{{ speaker }}</p>
+                    <p>最大相似度：{{ score }}</p>
+                    <p>最大相似度身份：{{ max_speaker }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script>
+    // 选择文件按钮
+    document.getElementById('login_btn').addEventListener('click', function() {
+        document.getElementById('embed_file').click();
+    });
+    document.getElementById('compare_btn').addEventListener('click', function() {
+        document.getElementById('eval_file').click();
+    });
+    document.getElementById('embed_file').addEventListener('change', function() {
+        document.getElementById('login_file').textContent = this.value.split('\\').pop();
+    });
+    document.getElementById('eval_file').addEventListener('change', function() {
+        document.getElementById('compare_file').textContent = this.value.split('\\').pop();
+    });
+    // 提交之后显示加载动画
+    var loginform = document.getElementById('loginform');
+    var compareform = document.getElementById('compareform');
+    var loading = document.getElementById('loading');
+    loginform.addEventListener('submit', function() {
+        loading.style.display = 'flex';
+    });
+    compareform.addEventListener('submit', function() {
+        loading.style.display = 'flex';
+    });
+    // 播放音频
+    function login_audio_play() {
+        var audio = document.getElementById('login_audio');
+        var file = document.getElementById('embed_file').files[0];
+        var url = URL.createObjectURL(file);
+        audio.src = url;
+    }
+    function compare_audio_play() {
+        var audio = document.getElementById('compare_audio');
+        var file = document.getElementById('eval_file').files[0];
+        var url = URL.createObjectURL(file);
+        console.log(url);
+        audio.src = url;
+    }
+    // 录音
+    // 将mediaRecorder声明为全局变量
+    let mediaRecorder;
+    let audioChunks = [];
+
+    function record_as_file(i) {
+        let recordBtn = document.querySelectorAll('#recordBtn')[i];
+        let recordStatus = document.querySelectorAll('#recordStatus')[i];
+        var audio;
+        if(i == 0){
+            audio = document.getElementById('login_audio');
+        }else{
+            audio = document.getElementById('compare_audio');
+        }
+        if (recordBtn.textContent === '开始录音') {
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.start();
+
+                    mediaRecorder.ondataavailable = function(event) {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = function() {
+                        const audioBlob = new Blob(audioChunks, { 'type' : 'audio/wav' });
+                        const audioUrl = URL.createObjectURL(audioBlob);
+                        audio.src = audioUrl;
+                        // 创建FormData对象
+                        var formData = new FormData();
+                        // 将文件添加到FormData对象中
+                        formData.append('audio', audioBlob, 'audiofile.wav');
+                        // 使用fetch API上传文件
+                        fetch('records', { 
+                            method: 'POST',
+                            body: formData,
+                        })
+
+                        audioChunks = [];
+                    };
+
+                    recordBtn.textContent = '停止录音';
+                    recordStatus.textContent = '正在录音...';
+                })
+                .catch(error => {
+                    console.error('获取麦克风权限失败:', error);
+                });
+        } else {
+            // 停止录音
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                recordBtn.textContent = '开始录音';
+                recordStatus.textContent = '录音已停止';
+            }
+        }
+    };
+</script>
+</html>
